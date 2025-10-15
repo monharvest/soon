@@ -4,7 +4,8 @@ import { Footer } from "@/components/footer"
 import { getAllPosts } from "@/lib/cloudflare-kv"
 
 export default async function Home() {
-  const posts = await getAllPosts()
+  const allPosts = await getAllPosts()
+  const posts = allPosts.filter((post) => post.published === true)
 
   return (
     <div className="min-h-screen flex flex-col">
