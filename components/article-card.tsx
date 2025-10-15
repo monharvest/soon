@@ -1,10 +1,9 @@
-import { Badge } from "@/components/ui/badge"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { getImageUrl } from "@/lib/image-utils"
 
 interface ArticleCardProps {
-  slug: string // Added slug prop
+  slug: string
   image: string
   badge?: string
   badgeColor?: string
@@ -17,12 +16,12 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({
-  slug, // Destructure slug
+  slug,
   image,
   badge,
   badgeColor = "bg-white",
   category,
-  categoryColor = "bg-blue-100 text-blue-700",
+  categoryColor,
   title,
   excerpt,
   date,
@@ -45,7 +44,6 @@ export function ArticleCard({
         </div>
       </Link>
       <div className="p-6">
-        <Badge className={`${categoryColor} mb-3`}>{category}</Badge>
         <Link href={`/post/${slug}`}>
           <h3 className="text-xl font-bold mb-3 text-balance hover:text-primary transition-colors">{title}</h3>
         </Link>
