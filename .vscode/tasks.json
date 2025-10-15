@@ -1,0 +1,20 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Deploy to Cloudflare Pages",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"wrangler",
+				"pages",
+				"deploy",
+				"out",
+				"--project-name=blogcopy"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

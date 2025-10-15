@@ -1,0 +1,18 @@
+import { Header } from "@/components/header"
+import { ContentSection } from "@/components/content-section"
+import { Footer } from "@/components/footer"
+import { getAllPosts } from "@/lib/cloudflare-kv"
+
+export default async function Home() {
+  const posts = await getAllPosts()
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <ContentSection posts={posts} />
+      </main>
+      <Footer />
+    </div>
+  )
+}

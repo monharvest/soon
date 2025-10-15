@@ -1,0 +1,25 @@
+name = "blogcopy"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".vercel/output/static"
+
+# Non-sensitive environment variables
+[vars]
+CLOUDFLARE_ACCOUNT_ID = "01644e982bf4fd61e45c31c2dc1a2a57"
+CLOUDFLARE_NAMESPACE_ID = "221b29add0c440658fdbab5c5665340c"
+NEXT_PUBLIC_R2_PUBLIC_URL = "https://01644e982bf4fd61e45c31c2dc1a2a57.r2.cloudflarestorage.com/blog-images"
+
+# Sensitive variables (set these as secrets using wrangler CLI):
+# - CLOUDFLARE_API_TOKEN
+# - ADMIN_PASSWORD
+# - R2_ACCESS_KEY_ID
+# - R2_SECRET_ACCESS_KEY
+
+# KV Namespaces binding
+[[kv_namespaces]]
+binding = "BLOG_KV"
+id = "221b29add0c440658fdbab5c5665340c"
+
+# R2 Buckets binding
+[[r2_buckets]]
+binding = "BLOG_IMAGES"
+bucket_name = "blog-images"
