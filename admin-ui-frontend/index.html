@@ -22,6 +22,15 @@
             vertical-align: middle;
             margin-right: 0.25rem;
         }
+        /* Style for the post list container to ensure it scrolls nicely */
+        #post-list-container {
+            max-height: calc(100vh - 250px); /* Adjust height for mobile/desktop view */
+        }
+        @media (min-width: 1024px) {
+            #post-list-container {
+                max-height: calc(100vh - 200px);
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -43,7 +52,7 @@
     <div id="app" class="flex flex-col lg:flex-row max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 lg:space-y-0 lg:space-x-8">
 
         <!-- Sidebar / Post List -->
-        <aside class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+        <aside class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-100 sticky top-4 self-start">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <i data-lucide="layout-list" class="icon w-6 h-6 mr-2 text-primary"></i>
                 KV Posts
@@ -51,7 +60,7 @@
             <button id="new-post-btn" class="w-full bg-primary text-white font-medium py-2 px-4 rounded-lg mb-4 shadow-md hover:bg-orange-700 transition flex items-center justify-center">
                 <i data-lucide="plus-circle" class="icon w-5 h-5 mr-2"></i> Create New Post
             </button>
-            <div id="post-list-container" class="space-y-3 h-[70vh] lg:h-[80vh] overflow-y-auto pr-2">
+            <div id="post-list-container" class="space-y-3 overflow-y-auto pr-2">
                 <p id="loading-posts" class="text-center text-gray-500">Loading posts...</p>
                 <!-- Post items will be injected here -->
             </div>
@@ -64,7 +73,7 @@
                     <i data-lucide="shield" class="icon w-6 h-6 mr-2 text-red-500"></i>
                     Authentication Required
                 </h2>
-                <p class="text-sm text-gray-600 mb-4">Enter your API Token. This token will be sent with every request to your backend Worker for authorization. The real Worker must implement token validation (e.g., against a secret).</p>
+                <p class="text-sm text-gray-600 mb-4">Enter your API Token. This token will be sent with every request to your backend Worker for authorization. The real Worker must implement token validation.</p>
                 <div class="flex space-x-2">
                     <input type="password" id="api-token" placeholder="Enter API Token" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                     <button id="auth-button" class="bg-gray-700 text-white font-medium py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 transition">
@@ -86,6 +95,25 @@
                     <div>
                         <label for="post-title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
                         <input type="text" id="post-title" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary shadow-sm">
+                    </div>
+
+                    <!-- Category (NEW FIELD) -->
+                    <div>
+                        <label for="post-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <input type="text" id="post-category" required placeholder="e.g., Tech, News, Lifestyle" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary shadow-sm">
+                        <p class="mt-1 text-xs text-gray-500">Used for grouping posts on the frontend.</p>
+                    </div>
+
+                    <!-- Excerpt -->
+                    <div>
+                        <label for="post-excerpt" class="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
+                        <textarea id="post-excerpt" rows="2" required placeholder="A short summary for previews" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary shadow-sm"></textarea>
+                    </div>
+
+                    <!-- Meta Description -->
+                    <div>
+                        <label for="post-metaDescription" class="block text-sm font-medium text-gray-700 mb-1">Meta Description (SEO)</label>
+                        <textarea id="post-metaDescription" rows="2" required placeholder="A short, SEO-optimized description" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary shadow-sm"></textarea>
                     </div>
 
                     <!-- Slug (Key) -->
@@ -129,8 +157,8 @@
 
     <script>
         // --- CONFIGURATION (UPDATE THESE) ---
-        // You MUST replace this with the URL where your Admin Worker is deployed (e.g., https://admin-worker.myusername.workers.dev)
-        const API_ENDPOINT = "https://admin-api.monharvest.dev/";
+        // This is your live Worker API URL
+        const API_ENDPOINT = "https://admin-api.monharvest.workers.dev";
         // --- END CONFIGURATION ---
 
         const elements = {
@@ -144,6 +172,9 @@
             postForm: document.getElementById('post-form'),
             postKey: document.getElementById('post-key'),
             postTitle: document.getElementById('post-title'),
+            postCategory: document.getElementById('post-category'), 
+            postExcerpt: document.getElementById('post-excerpt'), // NEW FIELD
+            postMetaDescription: document.getElementById('post-metaDescription'), // NEW FIELD
             postSlug: document.getElementById('post-slug'),
             postContent: document.getElementById('post-content'),
             imageFile: document.getElementById('image-file'),
@@ -215,12 +246,10 @@
             elements.imageUploadStatus.textContent = 'Uploading...';
             elements.uploadButton.disabled = true;
 
-            // 1. Prepare form data
             const formData = new FormData();
             formData.append('image', file);
 
             try {
-                // 2. Call the Worker's upload endpoint
                 const response = await fetch(`${API_ENDPOINT}/upload-image`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${authToken}` },
@@ -304,15 +333,37 @@
             event.preventDefault();
 
             const key = elements.postSlug.value.trim();
+            
+            // Generate UUID and current date/time strings for the KV schema
+            const newId = crypto.randomUUID();
+            const currentDate = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+            const currentTimestamp = new Date().toISOString();
+
+            const isNew = elements.postKey.value === ''; // Check if we are creating a new post or editing an old one
+
             const postData = {
-                key: key,
+                // Mandatory fields from your schema
+                id: isNew ? newId : elements.postKey.value, // Keep existing ID on update
                 title: elements.postTitle.value,
+                excerpt: elements.postExcerpt.value,
+                category: elements.postCategory.value, 
+                date: currentDate, // Auto-generated
+                image: elements.imageUrlOutput.value.replace(elements.imageUrlOutput.value.split('/pub')[0], ''), // Clean R2 URL to just the path (e.g., /images/filename.jpg)
                 slug: elements.postSlug.value,
+                metaDescription: elements.postMetaDescription.value,
                 content: elements.postContent.value,
-                imageUrl: elements.imageUrlOutput.value,
-                updatedAt: new Date().toISOString()
+                published: true, // Always true for simplicity in admin panel
+                featured: false, // Default to false
+                createdAt: isNew ? currentTimestamp : undefined, // Set only on creation
+                updatedAt: currentTimestamp // Set on every save
             };
 
+            // Remove createdAt if we are updating an existing post
+            if (!isNew) {
+                delete postData.createdAt;
+            }
+            
+            // Use the slug as the key for KV
             if (!key) {
                 showMessage('Validation Error', 'Post Slug/Key is required.', true);
                 return;
@@ -381,12 +432,17 @@
                 // Edit Post
                 const post = await fetchPost(key);
                 if (post) {
-                    elements.postTitle.value = post.title;
-                    elements.postSlug.value = post.slug;
+                    elements.postKey.value = post.id || '';
+                    elements.postTitle.value = post.title || '';
+                    elements.postCategory.value = post.category || ''; 
+                    elements.postExcerpt.value = post.excerpt || ''; // Load Excerpt
+                    elements.postMetaDescription.value = post.metaDescription || ''; // Load Meta Description
+                    elements.postSlug.value = post.slug || '';
                     elements.postSlug.readOnly = true; // Prevent key changes on existing post
                     elements.postSlug.classList.add('bg-gray-100');
-                    elements.postContent.value = post.content;
-                    elements.imageUrlOutput.value = post.imageUrl || '';
+                    elements.postContent.value = post.content || '';
+                    // Note: We don't have the R2 Public URL here, so we just set the stored image path
+                    elements.imageUrlOutput.value = post.image || ''; 
                     elements.editorArea.scrollIntoView({ behavior: 'smooth' });
                 }
             } else if (e.target.closest('.delete-btn')) {
