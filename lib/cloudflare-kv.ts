@@ -19,8 +19,12 @@ export interface Post {
 export async function getAllPosts(): Promise<Post[]> {
   const apiToken = process.env.CLOUDFLARE_API_TOKEN
 
-  if (!apiToken) {
-    throw new Error("CLOUDFLARE_API_TOKEN is not set")
+  if (!apiToken || apiToken === "YOUR_CLOUDFLARE_API_TOKEN_HERE") {
+    throw new Error(
+      "CLOUDFLARE_API_TOKEN is not set or is still a placeholder. " +
+        "Please update the .env.local file with your actual Cloudflare API token. " +
+        "See ENV_SETUP.md for instructions.",
+    )
   }
 
   try {
@@ -30,7 +34,7 @@ export async function getAllPosts(): Promise<Post[]> {
         headers: {
           Authorization: `Bearer ${apiToken}`,
         },
-        next: { revalidate: 60 }, // Cache for 60 seconds
+        next: { revalidate: 60 }, // Revalidate every 60 seconds
       },
     )
 
@@ -41,14 +45,16 @@ export async function getAllPosts(): Promise<Post[]> {
     }
 
     const keysData = await keysResponse.json()
-    const keys = keysData.result || []
+    const allKeys = keysData.result || []
+
+    const postKeys = allKeys.filter((key: { name: string }) => key.name.startsWith("post:"))
 
     console.log(
-      "[v0] Found keys in KV:",
-      keys.map((k: any) => k.name),
+      "[v0] Found post keys in KV:",
+      postKeys.map((k: any) => k.name),
     )
 
-    const postPromises = keys.map(async (key: { name: string }) => {
+    const postPromises = postKeys.map(async (key: { name: string }) => {
       try {
         const encodedKey = encodeURIComponent(key.name)
         const valueResponse = await fetch(
@@ -57,7 +63,7 @@ export async function getAllPosts(): Promise<Post[]> {
             headers: {
               Authorization: `Bearer ${apiToken}`,
             },
-            next: { revalidate: 60 },
+            next: { revalidate: 60 }, // Revalidate every 60 seconds
           },
         )
 
@@ -76,15 +82,20 @@ export async function getAllPosts(): Promise<Post[]> {
 
     const posts = await Promise.all(postPromises)
 
-    const validPosts = posts.filter((post): post is Post => post !== null && post.published === true)
+    const validPosts = posts.filter((post): post is Post => post !== null)
 
-    console.log("[v0] Successfully fetched", validPosts.length, "published posts")
+    console.log("[v0] Successfully fetched", validPosts.length, "posts")
 
     return validPosts
   } catch (error) {
     console.error("[v0] Error fetching posts from Cloudflare KV:", error)
     throw error
   }
+}
+
+export async function getPublishedPosts(): Promise<Post[]> {
+  const allPosts = await getAllPosts()
+  return allPosts.filter((post) => post.published === true)
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
@@ -116,8 +127,9 @@ export async function createPost(post: Omit<Post, "id" | "createdAt">): Promise<
   }
 
   try {
+    const key = `post:${newPost.slug}`
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${newPost.slug}`,
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`,
       {
         method: "PUT",
         headers: {
@@ -147,13 +159,11 @@ export async function updatePost(slug: string, post: Partial<Post>): Promise<Pos
   }
 
   try {
-    // Get existing post
     const existingPost = await getPostBySlug(slug)
     if (!existingPost) {
       throw new Error("Post not found")
     }
 
-    // Merge with updates
     const updatedPost: Post = {
       ...existingPost,
       ...post,
@@ -161,12 +171,12 @@ export async function updatePost(slug: string, post: Partial<Post>): Promise<Pos
       createdAt: existingPost.createdAt,
     }
 
-    // If slug changed, delete old key and create new one
     if (post.slug && post.slug !== slug) {
       await deletePost(slug)
 
+      const newKey = `post:${post.slug}`
       const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${post.slug}`,
+        `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(newKey)}`,
         {
           method: "PUT",
           headers: {
@@ -181,9 +191,9 @@ export async function updatePost(slug: string, post: Partial<Post>): Promise<Pos
         throw new Error(`Failed to update post: ${response.statusText}`)
       }
     } else {
-      // Update existing key
+      const key = `post:${slug}`
       const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${slug}`,
+        `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`,
         {
           method: "PUT",
           headers: {
@@ -214,8 +224,9 @@ export async function deletePost(slug: string): Promise<void> {
   }
 
   try {
+    const key = `post:${slug}`
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${slug}`,
+      `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces/${NAMESPACE_ID}/values/${encodeURIComponent(key)}`,
       {
         method: "DELETE",
         headers: {
