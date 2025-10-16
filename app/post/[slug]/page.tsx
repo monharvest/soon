@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer"
 import { getPostBySlug, getAllPosts, type Post } from "@/lib/cloudflare-kv"
 import { notFound } from "next/navigation"
 import { getImageUrl } from "@/lib/image-utils"
-import ReactMarkdown from "react-markdown"
+import ReactMarkdown, { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 
 export async function generateStaticParams() {
@@ -57,12 +57,12 @@ const getCategoryColor = (category: string) => {
   return colorMap[category] || "bg-gray-100 text-gray-700"
 }
 
-export default async function PostPage({ params }: { params: { slug: string } }) {
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   let article: Post | null = null
   let relatedPosts: Post[] = []
 
   try {
-    const { slug } = params
+    const { slug } = await params
     const decodedSlug = decodeURIComponent(slug)
     article = await getPostBySlug(decodedSlug)
 
@@ -128,63 +128,63 @@ export default async function PostPage({ params }: { params: { slug: string } })
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    h1: ({ children }) => <h1 className="text-4xl font-bold mt-8 mb-4 text-foreground">{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-3xl font-bold mt-8 mb-4 text-foreground">{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-2xl font-bold mt-6 mb-3 text-foreground">{children}</h3>,
-                    h4: ({ children }) => <h4 className="text-xl font-bold mt-6 mb-3 text-foreground">{children}</h4>,
-                    p: ({ children }) => <p className="mb-6 leading-relaxed text-lg text-foreground/90">{children}</p>,
-                    ul: ({ children }) => (
-                      <ul className="list-disc list-inside mb-6 space-y-2 text-lg text-foreground/90">{children}</ul>
+                    h1: (props: any) => <h1 className="text-4xl font-bold mt-8 mb-4 text-foreground">{props.children}</h1>,
+                    h2: (props: any) => <h2 className="text-3xl font-bold mt-8 mb-4 text-foreground">{props.children}</h2>,
+                    h3: (props: any) => <h3 className="text-2xl font-bold mt-6 mb-3 text-foreground">{props.children}</h3>,
+                    h4: (props: any) => <h4 className="text-xl font-bold mt-6 mb-3 text-foreground">{props.children}</h4>,
+                    p: (props: any) => <p className="mb-6 leading-relaxed text-lg text-foreground/90">{props.children}</p>,
+                    ul: (props: any) => (
+                      <ul className="list-disc list-inside mb-6 space-y-2 text-lg text-foreground/90">{props.children}</ul>
                     ),
-                    ol: ({ children }) => (
-                      <ol className="list-decimal list-inside mb-6 space-y-2 text-lg text-foreground/90">{children}</ol>
+                    ol: (props: any) => (
+                      <ol className="list-decimal list-inside mb-6 space-y-2 text-lg text-foreground/90">{props.children}</ol>
                     ),
-                    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                    blockquote: ({ children }) => (
+                    li: (props: any) => <li className="leading-relaxed">{props.children}</li>,
+                    blockquote: (props: any) => (
                       <blockquote className="border-l-4 border-primary pl-4 py-2 my-6 italic text-foreground/80 bg-muted/30 rounded-r">
-                        {children}
+                        {props.children}
                       </blockquote>
                     ),
-                    code: ({ inline, children, ...props }: any) =>
-                      inline ? (
+                    code: (props: any) =>
+                      props.inline ? (
                         <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary" {...props}>
-                          {children}
+                          {props.children}
                         </code>
                       ) : (
                         <code
                           className="block bg-muted p-4 rounded-lg my-6 overflow-x-auto text-sm font-mono text-foreground"
                           {...props}
                         >
-                          {children}
+                          {props.children}
                         </code>
                       ),
-                    pre: ({ children }) => <pre className="my-6">{children}</pre>,
-                    a: ({ children, href }) => (
+                    pre: (props: any) => <pre className="my-6">{props.children}</pre>,
+                    a: (props: any) => (
                       <a
-                        href={href}
+                        href={props.href}
                         className="text-primary hover:underline font-medium"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        {children}
+                        {props.children}
                       </a>
                     ),
-                    strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
-                    em: ({ children }) => <em className="italic">{children}</em>,
-                    hr: () => <hr className="my-8 border-border" />,
-                    table: ({ children }) => (
+                    strong: (props: any) => <strong className="font-bold text-foreground">{props.children}</strong>,
+                    em: (props: any) => <em className="italic">{props.children}</em>,
+                    hr: (props: any) => <hr className="my-8 border-border" />,
+                    table: (props: any) => (
                       <div className="overflow-x-auto my-6">
-                        <table className="min-w-full border-collapse border border-border">{children}</table>
+                        <table className="min-w-full border-collapse border border-border">{props.children}</table>
                       </div>
                     ),
-                    thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
-                    tbody: ({ children }) => <tbody>{children}</tbody>,
-                    tr: ({ children }) => <tr className="border-b border-border">{children}</tr>,
-                    th: ({ children }) => (
-                      <th className="px-4 py-2 text-left font-bold text-foreground border border-border">{children}</th>
+                    thead: (props: any) => <thead className="bg-muted">{props.children}</thead>,
+                    tbody: (props: any) => <tbody>{props.children}</tbody>,
+                    tr: (props: any) => <tr className="border-b border-border">{props.children}</tr>,
+                    th: (props: any) => (
+                      <th className="px-4 py-2 text-left font-bold text-foreground border border-border">{props.children}</th>
                     ),
-                    td: ({ children }) => (
-                      <td className="px-4 py-2 text-foreground/90 border border-border">{children}</td>
+                    td: (props: any) => (
+                      <td className="px-4 py-2 text-foreground/90 border border-border">{props.children}</td>
                     ),
                   }}
                 >
