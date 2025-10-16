@@ -80,7 +80,7 @@ export function Header() {
               <Input type="search" placeholder="Хайх..." className="pl-9 w-64 bg-muted/50" />
             </div>
             <ToggleTheme />
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(true)}>
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
               <Menu className="h-5 w-5" />
             </Button>
           </div>
@@ -97,9 +97,9 @@ export function Header() {
 
           <div className="fixed top-0 right-0 bottom-0 w-[280px] bg-background border-l border-border z-50 md:hidden overflow-hidden">
             <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center justify-between p-4 border-b border-border">
                 <span className="font-semibold">Цэс</span>
-                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
                   <X className="h-5 w-5" />
                 </Button>
               </div>

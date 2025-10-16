@@ -51,7 +51,7 @@ const getCategoryColor = (category: string) => {
     Advent: "bg-purple-100 text-purple-700",
     "Сургаалт зүйрлэлүүд": "bg-pink-100 text-pink-700",
     "Үхэл ба амилал": "bg-orange-100 text-orange-700",
-    "Мөнх үүлийн өвлөөт": "bg-amber-100 text-amber-700",
+  "Мөнх үүлийн өвлөөт": "bg-amber-700 text-white",
     "Таван тухай": "bg-red-100 text-red-700",
   }
   return colorMap[category] || "bg-gray-100 text-gray-700"
@@ -145,19 +145,21 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                         {props.children}
                       </blockquote>
                     ),
-                    code: (props: any) =>
-                      props.inline ? (
-                        <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary" {...props}>
+                    code: (props: any) => {
+                      const { inline, ...rest } = props || {}
+                      return inline ? (
+                        <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary" {...rest}>
                           {props.children}
                         </code>
                       ) : (
                         <code
                           className="block bg-muted p-4 rounded-lg my-6 overflow-x-auto text-sm font-mono text-foreground"
-                          {...props}
+                          {...rest}
                         >
                           {props.children}
                         </code>
-                      ),
+                      )
+                    },
                     pre: (props: any) => <pre className="my-6">{props.children}</pre>,
                     a: (props: any) => (
                       <a

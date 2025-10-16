@@ -17,14 +17,14 @@ export function ToggleTheme() {
   if (!mounted) {
     // Return a placeholder button with the same dimensions to prevent layout shift
     return (
-      <Button variant="ghost" size="icon" disabled>
+      <Button variant="ghost" size="icon" disabled aria-hidden="true">
         <div className="h-5 w-5" />
       </Button>
     )
   }
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme}>
+    <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
       {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
     </Button>
   )

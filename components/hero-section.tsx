@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import type { Post } from "@/lib/cloudflare-kv"
 import { getImageUrl } from "@/lib/image-utils"
@@ -45,9 +44,6 @@ export function HeroSection({ posts }: HeroSectionProps) {
             <p className="text-gray-300 leading-relaxed mb-6">{truncateExcerpt(featuredPost.excerpt, 20)}</p>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-gray-400">{featuredPost.date}</span>
-              <Badge variant="secondary" className="bg-blue-600 hover:bg-blue-700">
-                {featuredPost.category}
-              </Badge>
             </div>
           </div>
         </div>

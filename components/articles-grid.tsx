@@ -15,7 +15,7 @@ const getCategoryColor = (category: string) => {
     Advent: "bg-purple-100 text-purple-700",
     "Сургаалт зүйрлэлүүд": "bg-pink-100 text-pink-700",
     "Үхэл ба амилал": "bg-orange-100 text-orange-700",
-    "Мөнх үгийн ойлголт": "bg-amber-100 text-amber-700",
+  "Мөнх үгийн ойлголт": "bg-amber-700 text-white",
     "Тамын тухай": "bg-red-100 text-red-700",
   }
   return colorMap[category] || "bg-gray-100 text-gray-700"
