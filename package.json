@@ -7,7 +7,7 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "deploy": "npx wrangler pages deploy out --project-name=blogcopy"
+    "deploy": "npx wrangler pages deploy out --project-name=blogcopy --branch main"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "latest",
