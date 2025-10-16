@@ -1,6 +1,6 @@
 import Link from "next/link"
 import type { Post } from "@/lib/cloudflare-kv"
-import { getImageUrl } from "@/lib/image-utils"
+import { getImageUrl, getResponsiveImage } from "@/lib/image-utils"
 
 interface HeroSectionProps {
   posts: Post[]
@@ -25,13 +25,21 @@ export function HeroSection({ posts }: HeroSectionProps) {
         <div className="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
           <Link href={`/post/${featuredPost.slug}`} className="block">
             <div className="relative rounded-2xl overflow-hidden aspect-video hover:opacity-90 transition-opacity">
-              <img
-                src={getImageUrl(featuredPost.image) || "/placeholder.svg"}
-                alt={featuredPost.title}
-                loading="eager"
-                fetchPriority="high"
-                className="object-cover w-full h-full"
-              />
+              {(() => {
+                const img = getResponsiveImage(featuredPost.image, [640, 960, 1280, 1600],
+                  "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw")
+                return (
+                  <img
+                    src={img.src || "/placeholder.svg"}
+                    srcSet={img.srcSet}
+                    sizes={img.sizes}
+                    alt={featuredPost.title}
+                    loading="eager"
+                    fetchPriority="high"
+                    className="object-cover w-full h-full"
+                  />
+                )
+              })()}
             </div>
           </Link>
 

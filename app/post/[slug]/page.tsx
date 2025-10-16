@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { getPostBySlug, getAllPosts, type Post } from "@/lib/cloudflare-kv"
+import fs from "fs"
+import path from "path"
 import { notFound } from "next/navigation"
 import { getImageUrl } from "@/lib/image-utils"
 import ReactMarkdown, { Components } from "react-markdown"
@@ -17,10 +19,29 @@ export async function generateStaticParams() {
 
     if (!process.env.CLOUDFLARE_API_TOKEN || process.env.CLOUDFLARE_API_TOKEN === "YOUR_CLOUDFLARE_API_TOKEN_HERE") {
       console.warn("[v0] CLOUDFLARE_API_TOKEN not available during build")
-      console.warn("[v0] Please ensure environment variables are set in your deployment settings")
-      // Return empty array - this will cause build to fail with a clear error
-      // User needs to set up environment variables before building
-      return []
+      console.warn("[v0] Attempting local fallback: data/posts.json")
+
+      // Try a local fallback so `next build` / `next export` can succeed in environments
+      // where the Cloudflare API token isn't available (useful for local/offline builds).
+      try {
+        const fallbackPath = path.resolve(process.cwd(), "data/posts.json")
+        if (fs.existsSync(fallbackPath)) {
+          const json = fs.readFileSync(fallbackPath, "utf8")
+          const localPosts: Array<{ slug: string }> = JSON.parse(json)
+          const params = localPosts.map((p) => ({ slug: encodeURIComponent(p.slug) }))
+          console.warn("[v0] Using local posts.json fallback for generateStaticParams()")
+          console.log(`[v0] Generated ${params.length} static params (local):`, params.map((p) => p.slug).join(", "))
+          return params
+        }
+      } catch (err) {
+        console.error("[v0] Error reading local posts.json fallback:", err)
+      }
+
+      // No fallback available: throw a descriptive error so the build fails loudly instead
+      // of returning an empty array which leads to the confusing "missing param" runtime error.
+      throw new Error(
+        "CLOUDFLARE_API_TOKEN is not set during build and no data/posts.json fallback was found. Please set CLOUDFLARE_API_TOKEN or provide data/posts.json with posts to allow static export.",
+      )
     }
 
     const posts = await getAllPosts()
@@ -32,9 +53,24 @@ export async function generateStaticParams() {
       return []
     }
 
-    const params = posts.map((post) => ({
-      slug: post.slug,
-    }))
+    // Create a deduplicated set containing both decoded and encoded slug variants.
+    // Some clients/requests arrive percent-encoded while others use raw Unicode paths.
+    const slugSet = new Set<string>()
+    for (const post of posts) {
+      try {
+        const decoded = decodeURIComponent(post.slug)
+        slugSet.add(decoded)
+        slugSet.add(encodeURIComponent(decoded))
+      } catch (e) {
+        // If decodeURIComponent fails, fall back to raw + encoded
+        slugSet.add(post.slug)
+        try {
+          slugSet.add(encodeURIComponent(post.slug))
+        } catch {}
+      }
+    }
+
+    const params = Array.from(slugSet).map((slug) => ({ slug }))
 
     console.log(`[v0] Generated ${params.length} static params:`, params.map((p) => p.slug).join(", "))
     return params
