@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KV/R2 Admin Panel</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for appearance */
+        :root {
+            --primary: #f97316; /* Orange 600 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .icon {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 0.25rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Modal for Messages/Alerts -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full transform transition-all duration-300">
+            <h3 id="modal-title" class="text-lg font-semibold text-gray-900 mb-2 flex items-center"></h3>
+            <p id="modal-body" class="text-sm text-gray-700"></p>
+            <div class="mt-4 text-right">
+                <button onclick="document.getElementById('message-modal').classList.add('hidden')" class="bg-primary text-white font-medium py-2 px-4 rounded-lg shadow-md hover:bg-orange-700 transition">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app" class="flex flex-col lg:flex-row max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 lg:space-y-0 lg:space-x-8">
+
+        <!-- Sidebar / Post List -->
+        <aside class="w-full lg:w-1/3 bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i data-lucide="layout-list" class="icon w-6 h-6 mr-2 text-primary"></i>
+                KV Posts
+            </h2>
+            <button id="new-post-btn" class="w-full bg-primary text-white font-medium py-2 px-4 rounded-lg mb-4 shadow-md hover:bg-orange-700 transition flex items-center justify-center">
+                <i data-lucide="plus-circle" class="icon w-5 h-5 mr-2"></i> Create New Post
+            </button>
+            <div id="post-list-container" class="space-y-3 h-[70vh] lg:h-[80vh] overflow-y-auto pr-2">
+                <p id="loading-posts" class="text-center text-gray-500">Loading posts...</p>
+                <!-- Post items will be injected here -->
+            </div>
+        </aside>
+
+        <!-- Main Content / Editor -->
+        <main class="w-full lg:w-2/3">
+            <div id="auth-check" class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i data-lucide="shield" class="icon w-6 h-6 mr-2 text-red-500"></i>
+                    Authentication Required
+                </h2>
+                <p class="text-sm text-gray-600 mb-4">Enter your API Token. This token will be sent with every request to your backend Worker for authorization. The real Worker must implement token validation (e.g., against a secret).</p>
+                <div class="flex space-x-2">
+                    <input type="password" id="api-token" placeholder="Enter API Token" class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    <button id="auth-button" class="bg-gray-700 text-white font-medium py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 transition">
+                        Authenticate
+                    </button>
+                </div>
+            </div>
+
+            <div id="editor-area" class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i data-lucide="edit" class="icon w-6 h-6 mr-2 text-primary"></i>
+                    Post Editor
+                </h2>
+
+                <form id="post-form" class="space-y-4">
+                    <input type="hidden" id="post-key">
+
+                    <!-- Title -->
+                    <div>
+                        <label for="post-title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <input type="text" id="post-title" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary shadow-sm">
+                    </div>
+
+                    <!-- Slug (Key) -->
+                    <div>
+                        <label for="post-slug" class="block text-sm font-medium text-gray-700 mb-1">Slug (KV Key)</label>
+                        <input type="text" id="post-slug" required placeholder="e.g., my-first-blog-post" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary shadow-sm">
+                        <p class="mt-1 text-xs text-gray-500">This will be the unique key in KV. Use lowercase and hyphens.</p>
+                    </div>
+
+                    <!-- Content (Markdown) -->
+                    <div>
+                        <label for="post-content" class="block text-sm font-medium text-gray-700 mb-1">Content (Markdown)</label>
+                        <textarea id="post-content" rows="10" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary shadow-sm"></textarea>
+                    </div>
+
+                    <!-- Image Uploader -->
+                    <div class="border-t border-gray-200 pt-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                            <i data-lucide="image" class="icon w-5 h-5 mr-2 text-sky-600"></i>
+                            Image Upload (to R2)
+                        </h3>
+                        <input type="file" id="image-file" accept="image/*" class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-primary hover:file:bg-orange-100 transition">
+                        <button type="button" id="upload-button" class="mt-3 bg-sky-600 text-white font-medium py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition">
+                            <i data-lucide="upload" class="icon w-5 h-5 mr-1"></i> Upload to R2
+                        </button>
+                        <p id="image-upload-status" class="mt-2 text-sm text-gray-500"></p>
+                        <input type="text" id="image-url-output" placeholder="R2 Image URL will appear here" readonly class="mt-3 w-full p-2 border border-dashed border-gray-300 bg-gray-50 rounded-lg text-sm">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-green-700 transition flex items-center justify-center">
+                            <i data-lucide="save" class="icon w-6 h-6 mr-2"></i> Save Post to KV
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // --- CONFIGURATION (UPDATE THESE) ---
+        // You MUST replace this with the URL where your Admin Worker is deployed (e.g., https://admin-worker.myusername.workers.dev)
+        const API_ENDPOINT = "https://admin-api.monharvest.dev/";
+        // --- END CONFIGURATION ---
+
+        const elements = {
+            authCheck: document.getElementById('auth-check'),
+            apiToken: document.getElementById('api-token'),
+            authButton: document.getElementById('auth-button'),
+            editorArea: document.getElementById('editor-area'),
+            postListContainer: document.getElementById('post-list-container'),
+            loadingPosts: document.getElementById('loading-posts'),
+            newPostBtn: document.getElementById('new-post-btn'),
+            postForm: document.getElementById('post-form'),
+            postKey: document.getElementById('post-key'),
+            postTitle: document.getElementById('post-title'),
+            postSlug: document.getElementById('post-slug'),
+            postContent: document.getElementById('post-content'),
+            imageFile: document.getElementById('image-file'),
+            uploadButton: document.getElementById('upload-button'),
+            imageUploadStatus: document.getElementById('image-upload-status'),
+            imageUrlOutput: document.getElementById('image-url-output'),
+            messageModal: document.getElementById('message-modal'),
+            modalTitle: document.getElementById('modal-title'),
+            modalBody: document.getElementById('modal-body'),
+        };
+
+        let authToken = localStorage.getItem('adminToken') || '';
+
+        // --- UTILITY FUNCTIONS ---
+
+        function showMessage(title, body, isError = false) {
+            elements.modalTitle.innerHTML = `<i data-lucide="${isError ? 'x-circle' : 'check-circle'}" class="icon w-5 h-5 mr-2 ${isError ? 'text-red-500' : 'text-green-500'}"></i>${title}`;
+            elements.modalBody.textContent = body;
+            elements.messageModal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function createAuthHeader() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            };
+        }
+
+        // --- AUTHENTICATION LOGIC ---
+
+        function updateAuthUI() {
+            if (authToken) {
+                elements.authCheck.classList.add('hidden');
+                elements.editorArea.classList.remove('hidden');
+                elements.apiToken.value = '********'; // Mask the token
+                fetchPosts();
+            } else {
+                elements.authCheck.classList.remove('hidden');
+                elements.editorArea.classList.add('hidden');
+                elements.postListContainer.innerHTML = '<p class="text-center text-red-500">Please authenticate to view posts.</p>';
+            }
+        }
+
+        elements.authButton.addEventListener('click', () => {
+            const token = elements.apiToken.value.trim();
+            if (token && token !== '********') {
+                authToken = token;
+                localStorage.setItem('adminToken', token);
+                updateAuthUI();
+                showMessage('Authenticated!', 'Your API token has been saved locally.', false);
+            } else if (authToken) {
+                // If token is masked but one is stored, just update UI
+                updateAuthUI();
+            } else {
+                showMessage('Error', 'Please enter a valid API Token.', true);
+            }
+        });
+
+        // --- R2 IMAGE UPLOAD ---
+
+        async function handleImageUpload() {
+            const file = elements.imageFile.files[0];
+            if (!file) {
+                showMessage('Error', 'Please select a file to upload.', true);
+                return;
+            }
+
+            elements.imageUploadStatus.textContent = 'Uploading...';
+            elements.uploadButton.disabled = true;
+
+            // 1. Prepare form data
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                // 2. Call the Worker's upload endpoint
+                const response = await fetch(`${API_ENDPOINT}/upload-image`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    elements.imageUploadStatus.textContent = `Upload successful! Filename: ${result.key}`;
+                    elements.imageUploadStatus.classList.replace('text-red-500', 'text-green-500');
+                    elements.imageUrlOutput.value = result.url; // The public URL to the R2 object
+                    showMessage('Success', 'Image uploaded successfully to R2!', false);
+                } else {
+                    throw new Error(result.error || 'Unknown upload error');
+                }
+            } catch (error) {
+                elements.imageUploadStatus.textContent = `Upload failed: ${error.message}`;
+                elements.imageUploadStatus.classList.replace('text-green-500', 'text-red-500');
+                showMessage('Error', `Image upload failed: ${error.message}`, true);
+            } finally {
+                elements.uploadButton.disabled = false;
+            }
+        }
+
+        elements.uploadButton.addEventListener('click', handleImageUpload);
+
+        // --- KV POST MANAGEMENT ---
+
+        async function fetchPosts() {
+            if (!authToken) return;
+
+            elements.loadingPosts.classList.remove('hidden');
+            elements.postListContainer.innerHTML = ''; // Clear existing list
+
+            try {
+                const response = await fetch(`${API_ENDPOINT}/posts`, {
+                    headers: createAuthHeader(),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (result.keys && result.keys.length > 0) {
+                        elements.loadingPosts.classList.add('hidden');
+                        result.keys.forEach(key => {
+                            createPostListItem(key);
+                        });
+                    } else {
+                        elements.loadingPosts.textContent = 'No posts found in KV.';
+                        elements.loadingPosts.classList.remove('hidden');
+                    }
+                } else {
+                    throw new Error(result.error || 'Failed to fetch posts.');
+                }
+            } catch (error) {
+                elements.loadingPosts.textContent = `Failed to load posts. Check your Worker API: ${error.message}`;
+                showMessage('Error', `Failed to load posts from Worker: ${error.message}`, true);
+            }
+        }
+
+        async function fetchPost(key) {
+            try {
+                const response = await fetch(`${API_ENDPOINT}/posts/${key}`, {
+                    headers: createAuthHeader(),
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    return result;
+                } else {
+                    throw new Error(result.error || `Failed to fetch post: ${key}`);
+                }
+            } catch (error) {
+                showMessage('Error', `Could not load post data: ${error.message}`, true);
+                return null;
+            }
+        }
+
+        async function handlePostSave(event) {
+            event.preventDefault();
+
+            const key = elements.postSlug.value.trim();
+            const postData = {
+                key: key,
+                title: elements.postTitle.value,
+                slug: elements.postSlug.value,
+                content: elements.postContent.value,
+                imageUrl: elements.imageUrlOutput.value,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (!key) {
+                showMessage('Validation Error', 'Post Slug/Key is required.', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_ENDPOINT}/posts/${key}`, {
+                    method: 'PUT', // Using PUT for both create and update (idempotent)
+                    headers: createAuthHeader(),
+                    body: JSON.stringify(postData),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage('Post Saved!', `Post '${postData.title}' saved successfully to KV key: ${key}.`, false);
+                    fetchPosts(); // Refresh list
+                    resetForm();
+                } else {
+                    throw new Error(result.error || 'Unknown save error');
+                }
+            } catch (error) {
+                showMessage('Error', `Failed to save post: ${error.message}`, true);
+            }
+        }
+
+        function createPostListItem(key) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-3 rounded-lg border border-gray-200 transition';
+            wrapper.innerHTML = `
+                <span class="font-medium text-gray-700 truncate">${key}</span>
+                <div>
+                    <button data-key="${key}" class="edit-btn text-primary hover:text-orange-700 p-1 rounded-full transition">
+                        <i data-lucide="pencil" class="w-4 h-4"></i>
+                    </button>
+                    <button data-key="${key}" class="delete-btn text-red-500 hover:text-red-700 p-1 rounded-full transition ml-2">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+            elements.postListContainer.appendChild(wrapper);
+            lucide.createIcons();
+        }
+
+        function resetForm() {
+            elements.postForm.reset();
+            elements.postKey.value = '';
+            elements.postSlug.readOnly = false;
+            elements.postSlug.classList.remove('bg-gray-100');
+            elements.imageUploadStatus.textContent = '';
+            elements.imageUploadStatus.classList.remove('text-red-500', 'text-green-500');
+            elements.editorArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- EVENT LISTENERS ---
+
+        elements.newPostBtn.addEventListener('click', resetForm);
+        elements.postForm.addEventListener('submit', handlePostSave);
+        
+        // Delegated event listener for Edit and Delete buttons
+        elements.postListContainer.addEventListener('click', async (e) => {
+            const key = e.target.closest('button')?.dataset.key;
+            if (!key) return;
+
+            if (e.target.closest('.edit-btn')) {
+                // Edit Post
+                const post = await fetchPost(key);
+                if (post) {
+                    elements.postTitle.value = post.title;
+                    elements.postSlug.value = post.slug;
+                    elements.postSlug.readOnly = true; // Prevent key changes on existing post
+                    elements.postSlug.classList.add('bg-gray-100');
+                    elements.postContent.value = post.content;
+                    elements.imageUrlOutput.value = post.imageUrl || '';
+                    elements.editorArea.scrollIntoView({ behavior: 'smooth' });
+                }
+            } else if (e.target.closest('.delete-btn')) {
+                // Delete Post (using custom modal confirmation since alert() is forbidden)
+                const isConfirmed = await new Promise(resolve => {
+                    showMessage('Confirm Deletion', `Are you sure you want to delete the post with key: ${key}? This cannot be undone.`, true);
+                    const modal = document.getElementById('message-modal');
+                    const dismissBtn = modal.querySelector('button');
+
+                    // Replace "Dismiss" with "Confirm" and "Cancel"
+                    dismissBtn.textContent = 'Cancel';
+                    dismissBtn.className = 'bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg shadow-md hover:bg-gray-400 transition';
+
+                    const confirmBtn = document.createElement('button');
+                    confirmBtn.textContent = 'Delete';
+                    confirmBtn.className = 'bg-red-600 text-white font-medium py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition ml-2';
+
+                    const footer = dismissBtn.parentNode;
+                    footer.appendChild(confirmBtn);
+
+                    confirmBtn.onclick = () => {
+                        resolve(true);
+                        modal.classList.add('hidden');
+                        confirmBtn.remove();
+                        dismissBtn.textContent = 'Dismiss';
+                        dismissBtn.className = 'bg-primary text-white font-medium py-2 px-4 rounded-lg shadow-md hover:bg-orange-700 transition';
+                    };
+                    dismissBtn.onclick = () => {
+                        resolve(false);
+                        modal.classList.add('hidden');
+                        confirmBtn.remove();
+                        dismissBtn.textContent = 'Dismiss';
+                        dismissBtn.className = 'bg-primary text-white font-medium py-2 px-4 rounded-lg shadow-md hover:bg-orange-700 transition';
+                    };
+                });
+
+                if (isConfirmed) {
+                    try {
+                        const response = await fetch(`${API_ENDPOINT}/posts/${key}`, {
+                            method: 'DELETE',
+                            headers: createAuthHeader(),
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok) {
+                            showMessage('Deleted!', `Post '${key}' was successfully deleted.`, false);
+                            fetchPosts(); // Refresh list
+                            resetForm();
+                        } else {
+                            throw new Error(result.error || 'Failed to delete post.');
+                        }
+                    } catch (error) {
+                        showMessage('Error', `Failed to delete post: ${error.message}`, true);
+                    }
+                }
+            }
+        });
+
+        // Initialize
+        window.onload = () => {
+            updateAuthUI();
+            lucide.createIcons(); // Render initial icons
+        };
+
+    </script>
+</body>
+</html>
