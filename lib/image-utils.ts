@@ -22,3 +22,37 @@ export function getImageUrl(imagePath: string | undefined): string {
 
   return finalUrl
 }
+
+/**
+ * Build responsive image attributes for a given image path.
+ * Returns an object with src, srcSet and sizes suitable for <img> elements.
+ */
+export function getResponsiveImage(
+  imagePath: string | undefined,
+  widths: number[] = [400, 800, 1200, 1600],
+  sizes = "(max-width: 768px) 100vw, 50vw",
+) {
+  const src = getImageUrl(imagePath)
+
+  // If src is placeholder, return single src only
+  if (!src || src === "/placeholder.svg") {
+    return { src, srcSet: undefined, sizes: undefined }
+  }
+
+  // If the host supports width query param like ?w=, build srcset entries.
+  // This assumes R2 is fronted by an image resizing service that accepts ?w=.
+  try {
+    const url = new URL(src)
+    const srcSet = widths
+      .map((w) => {
+        const u = new URL(src)
+        u.searchParams.set("w", String(w))
+        return `${u.toString()} ${w}w`
+      })
+      .join(", ")
+
+    return { src: url.toString(), srcSet, sizes }
+  } catch (e) {
+    return { src, srcSet: undefined, sizes: undefined }
+  }
+}
