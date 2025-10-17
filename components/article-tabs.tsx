@@ -20,12 +20,12 @@ export function ArticleTabs() {
   return (
     <div className="border-b border-border">
       <div className="container mx-auto px-4">
-        <div className="flex flex-wrap gap-2 py-4">
+        <div className="flex flex-wrap gap-4 py-6">
           {tabs.map((tab) => (
             <Button
               key={tab}
               variant="ghost"
-              className="rounded-full px-6 hover:bg-primary hover:text-primary-foreground"
+              className="rounded-full px-6 py-2 hover:bg-[#1e293b] hover:text-white dark:hover:bg-primary dark:hover:text-primary-foreground border border-border"
               onClick={() => handleTabChange(tab)}
             >
               {tab}
