@@ -32,15 +32,7 @@ export function HeroSection({ posts }: HeroSectionProps) {
 
   return (
     <section className="bg-[#1e293b] text-white py-16 relative overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-30 mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url(https://soon.udaxgui.com/posts/images/light.avif)",
-          backgroundSize: "cover",
-          backgroundPosition: "left bottom",
-        }}
-      />
+      
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
           <Link href={`/post/${featuredPost.slug}`} className="block group">
