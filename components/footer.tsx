@@ -1,9 +1,10 @@
 export function Footer() {
   return (
     <footer className="bg-[#1e293b] text-white py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl items-start">
-          <div>
+      <div className="w-full">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-8 w-full items-start">
+            <div>
             <h3 className="text-xl font-bold mb-4">Udaxgui.com</h3>
             <p className="text-gray-400 text-sm leading-relaxed mb-2">
               "Эдүгээ итгэл, найдвар, хайр гурав үлддэг боловч хамгийн агуу нь хайр мөн."
@@ -37,10 +38,11 @@ export function Footer() {
                 </li>
               </ul>
             </nav>
+            </div>
           </div>
-        </div>
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
-          © 2025 Udaxgui.com. Бүх эрх хуулиар хамгаалагдсан.
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
+            © 2025 Udaxgui.com. Бүх эрх хуулиар хамгаалагдсан.
+          </div>
         </div>
       </div>
     </footer>
