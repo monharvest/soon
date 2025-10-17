@@ -20,6 +20,8 @@ export default function RootLayout({
   return (
     <html lang="mn" suppressHydrationWarning>
       <head>
+        {/* Preconnect to R2 image host to reduce handshake time */}
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_R2_PUBLIC_URL || 'https://soon.udaxgui.com'} crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

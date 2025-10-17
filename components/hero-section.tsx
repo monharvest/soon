@@ -23,25 +23,28 @@ export function HeroSection({ posts }: HeroSectionProps) {
     <section className="bg-[#1e293b] text-white py-16">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
-          <Link href={`/post/${featuredPost.slug}`} className="block">
-            <div className="relative rounded-2xl overflow-hidden aspect-video hover:opacity-90 transition-opacity">
-              {(() => {
-                const img = getResponsiveImage(featuredPost.image, [640, 960, 1280, 1600],
-                  "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw")
-                return (
-                  <img
-                    src={img.src || "/placeholder.svg"}
-                    srcSet={img.srcSet}
-                    sizes={img.sizes}
-                    alt={featuredPost.title}
-                    loading="eager"
-                    fetchPriority="high"
-                    className="object-cover w-full h-full"
-                  />
-                )
-              })()}
+          <div className="w-full flex justify-center md:justify-start">
+            <div className="max-w-[600px] w-full">
+              <Link href={`/post/${featuredPost.slug}`} className="block">
+                <div className="relative rounded-2xl overflow-hidden aspect-video hover:opacity-90 transition-opacity">
+                  {(() => {
+                    const img = getResponsiveImage(featuredPost.image, [360, 600, 960, 1280], "(max-width: 600px) 100vw, 600px")
+                    return (
+                      <img
+                        src={img.src || "/placeholder.svg"}
+                        srcSet={img.srcSet}
+                        sizes={img.sizes}
+                        alt={featuredPost.title}
+                        loading="eager"
+                        fetchPriority="high"
+                        className="object-cover w-full h-full"
+                      />
+                    )
+                  })()}
+                </div>
+              </Link>
             </div>
-          </Link>
+          </div>
 
           <div>
             <Link href={`/post/${featuredPost.slug}`}>

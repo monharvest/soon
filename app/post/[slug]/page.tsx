@@ -7,7 +7,7 @@ import { getPostBySlug, getAllPosts, type Post } from "@/lib/cloudflare-kv"
 import fs from "fs"
 import path from "path"
 import { notFound } from "next/navigation"
-import { getImageUrl } from "@/lib/image-utils"
+import { getImageUrl, getResponsiveImage } from "@/lib/image-utils"
 import ReactMarkdown, { Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 
@@ -151,13 +151,34 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               <hr className="mb-8 border-border" />
 
               <div className="relative mb-8 rounded-lg overflow-hidden aspect-video">
-                <img
-                  src={getImageUrl(article.image) || "/placeholder.svg"}
-                  alt={article.title}
-                  loading="eager"
-                  fetchPriority="high"
-                  className="object-cover w-full h-full"
-                />
+                {(() => {
+                  const base = getImageUrl(article.image) || "/placeholder.svg"
+                  // Build responsive attributes capped at 600px for hero LCP
+                  const img = getResponsiveImage(article.image, [360, 600], "(max-width:600px) 100vw, 600px")
+                  // Ensure primary src is the 600px variant so the browser decodes the right size
+                  let primarySrc = img.src
+                  try {
+                    const u = new URL(img.src)
+                    u.searchParams.set('w', '600')
+                    primarySrc = u.toString()
+                  } catch (e) {
+                    // fallback to base
+                    primarySrc = base
+                  }
+
+                  return (
+                    <img
+                      src={primarySrc}
+                      srcSet={img.srcSet}
+                      sizes={img.sizes}
+                      alt={article.title}
+                      loading="eager"
+                      fetchPriority="high"
+                      decoding="async"
+                      className="object-cover w-full h-full"
+                    />
+                  )
+                })()}
               </div>
 
               <div className="prose-custom max-w-none">
