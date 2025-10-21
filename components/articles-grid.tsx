@@ -56,7 +56,7 @@ export function ArticlesGrid({ posts, selectedCategory }: ArticlesGridProps) {
         <h2 className="text-3xl font-bold mb-8">{activeCategory !== "Бүгд" ? activeCategory : "Нийтлэлүүд"}</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {articles.map((article, index) => (
-            <ArticleCard key={index} {...article} />
+            <ArticleCard key={article.slug} {...article} />
           ))}
         </div>
         {articles.length === 0 && (

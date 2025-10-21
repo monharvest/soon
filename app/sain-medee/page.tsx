@@ -23,7 +23,7 @@ export default async function SainMedeePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.map((post) => (
                 <ArticleCard
-                  key={post.id}
+                  key={post.slug}
                   slug={post.slug}
                   title={post.title}
                   excerpt={post.excerpt}
