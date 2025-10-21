@@ -56,7 +56,7 @@ export function HeroSection({ posts }: HeroSectionProps) {
                   position: absolute;
                   top: 0;
                   left: 0;
-                  width: 100%; /* Full width of the card */
+                  width: 40%; /* Full width of the card */
                   height: 100%; /* Full height of the card */
                   background: linear-gradient(45deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
                   transform: skewX(-20deg);
@@ -67,8 +67,8 @@ export function HeroSection({ posts }: HeroSectionProps) {
                   animation: lightShift 6s infinite alternate;
                 }
                 @keyframes lightShift {
-                  0% { transform: skewX(-20deg) translateX(-50px); }
-                  100% { transform: skewX(-20deg) translateX(50px); }
+                  0% { transform: skewX(-20deg) translateX(-60px); }
+                  100% { transform: skewX(-20deg) translateX(60px); }
                 }
               `}</style>
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
