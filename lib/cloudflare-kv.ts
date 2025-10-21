@@ -19,48 +19,12 @@ export interface Post {
 export async function getAllPosts(): Promise<Post[]> {
   const apiToken = process.env.CLOUDFLARE_API_TOKEN
 
-  // If the Cloudflare API token isn't available, gracefully fall back to a
-  // local JSON file (`data/posts.json`) so static builds (e.g. Pages) can
-  // succeed without secrets. create/update/delete operations still require
-  // a valid token and will throw as before.
   if (!apiToken || apiToken === "YOUR_CLOUDFLARE_API_TOKEN_HERE") {
-    try {
-      // Lazy import so this only runs in Node/static-build environments
-      // where filesystem access is available.
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const path = require("path")
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const fs = require("fs")
-      const dataPath = path.join(process.cwd(), "data", "posts.json")
-      if (fs.existsSync(dataPath)) {
-        const raw = fs.readFileSync(dataPath, "utf-8")
-        const posts = JSON.parse(raw) as Array<{ slug: string } & Partial<Post>>
-        console.log("[v0] Using local posts.json fallback for generateStaticParams()")
-        // Map minimal shape into Post[] with safe defaults where possible
-        return posts.map((p, i) => ({
-          id: p.id || `local-${i}`,
-          title: p.title || (p.slug ?? ""),
-          excerpt: p.excerpt || "",
-          category: p.category || "",
-          date: p.date || new Date().toISOString(),
-          image: p.image || "",
-          slug: p.slug || "",
-          metaDescription: p.metaDescription || "",
-          content: p.content || "",
-          published: typeof p.published === "boolean" ? p.published : true,
-          featured: typeof p.featured === "boolean" ? p.featured : false,
-          createdAt: p.createdAt || new Date().toISOString(),
-        }))
-      }
-    } catch (err) {
-      console.warn("[v0] Failed to read local posts.json fallback:", err)
-    }
-
-    throw new Error(
-      "CLOUDFLARE_API_TOKEN is not set or is still a placeholder. " +
-        "Please update the .env.local file with your actual Cloudflare API token. " +
-        "See ENV_SETUP.md for instructions.",
+    console.warn(
+      "[v0] CLOUDFLARE_API_TOKEN not available during build. Returning empty posts array. " +
+        "Posts will be fetched at runtime when the token is available.",
     )
+    return []
   }
 
   try {
@@ -80,10 +44,10 @@ export async function getAllPosts(): Promise<Post[]> {
       throw new Error(`Failed to fetch keys: ${keysResponse.statusText}`)
     }
 
-  const keysData: any = await keysResponse.json()
-  const allKeys: Array<{ name: string }> = keysData?.result || []
+    const keysData = await keysResponse.json()
+    const allKeys = keysData.result || []
 
-  const postKeys = allKeys.filter((key) => key.name && key.name.startsWith("post:"))
+    const postKeys = allKeys.filter((key: { name: string }) => key.name.startsWith("post:"))
 
     console.log(
       "[v0] Found post keys in KV:",
@@ -116,13 +80,13 @@ export async function getAllPosts(): Promise<Post[]> {
       }
     })
 
-  const posts = (await Promise.all(postPromises)) as Array<Post | null>
+    const posts = await Promise.all(postPromises)
 
-  const validPosts: Post[] = posts.filter((post): post is Post => post !== null)
+    const validPosts = posts.filter((post): post is Post => post !== null)
 
-  console.log("[v0] Successfully fetched", validPosts.length, "posts")
+    console.log("[v0] Successfully fetched", validPosts.length, "posts")
 
-  return validPosts
+    return validPosts
   } catch (error) {
     console.error("[v0] Error fetching posts from Cloudflare KV:", error)
     throw error

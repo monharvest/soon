@@ -1,21 +1,22 @@
 import { Header } from "@/components/header"
-import { ArticleTabs } from "@/components/article-tabs"
-import { ArticlesGrid } from "@/components/articles-grid"
+import { ContentSection } from "@/components/content-section"
 import { Footer } from "@/components/footer"
 import { getAllPosts } from "@/lib/cloudflare-kv"
+import { getImageUrl } from "@/lib/image-utils"
 
-export default async function NiitlelPage() {
-  const posts = await getAllPosts()
+export default async function Home() {
+  const allPosts = await getAllPosts()
+  const posts = allPosts.filter((post) => post.published === true)
+
+  const featuredPost = posts.find((post) => post.featured) || posts[0] || null
+  const heroImageUrl = featuredPost ? getImageUrl(featuredPost.image) : null
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col">
+      {heroImageUrl && <link rel="preload" as="image" href={heroImageUrl} fetchPriority="high" />}
       <Header />
       <main className="flex-1">
-        <div className="container mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold mb-8 text-center">Нийтлэлүүд</h1>
-          <ArticleTabs />
-          <ArticlesGrid posts={posts} />
-        </div>
+        <ContentSection posts={posts} />
       </main>
       <Footer />
     </div>

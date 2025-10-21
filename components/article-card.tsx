@@ -51,6 +51,11 @@ export function ArticleCard({
               backgroundPosition: "left bottom",
             }}
           />
+          {/* requested gradient overlay (translucent) so category gradients stay visible */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom right, #d343d3, #112340)", opacity: 0.25 }}
+          />
           <div className="absolute inset-0 bg-gradient-to-bl from-white/30 via-transparent to-black/20" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="relative z-10">
