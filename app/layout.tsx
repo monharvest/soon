@@ -22,6 +22,9 @@ export default function RootLayout({
       <head>
         {/* Preconnect to R2 image host to reduce handshake time */}
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_R2_PUBLIC_URL || 'https://soon.udaxgui.com'} crossOrigin="anonymous" />
+        {/* Preconnect to common font origins to speed up font loading (keeps total <=4) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
