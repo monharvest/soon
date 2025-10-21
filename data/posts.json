@@ -1,0 +1,32 @@
+[
+  {
+    "id": "local-1",
+    "title": "Nomadic1",
+    "slug": "nomadic",
+    "category": "Сургаалт зүйрлэлүүд",
+    "excerpt": "nomadic",
+    "content": "nomadic",
+    "metaDescription": "nomadic",
+    "image": "/posts/images/1760623997862-advnet3.webp",
+    "date": "2025-10-16",
+    "published": true,
+    "featured": false,
+    "createdAt": "2025-10-16T14:13:20.641Z",
+    "updatedAt": "2025-10-16T18:48:24.724Z"
+  },
+  {
+    "id": "local-2",
+    "title": "Мөнх-гэдэг үг",
+    "slug": "мөнх-гэдэг-үг",
+    "category": "Нийтлэл",
+    "excerpt": "Мөнх-гэдэг үгийн тайлбар",
+    "content": "Мөнх-гэдэг үгийн тайлбар",
+    "metaDescription": "мөнх-гэдэг-үг",
+    "image": "/posts/images/1760623997862-advnet3.webp",
+    "date": "2025-10-16",
+    "published": true,
+    "featured": false,
+    "createdAt": "2025-10-16T14:13:20.641Z",
+    "updatedAt": "2025-10-16T18:48:24.724Z"
+  }
+]
