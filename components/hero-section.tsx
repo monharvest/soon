@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { Post } from "@/lib/cloudflare-kv"
+import { getImageUrl } from "@/lib/image-utils"
 
 interface HeroSectionProps {
   posts: Post[]
@@ -30,6 +31,8 @@ export function HeroSection({ posts }: HeroSectionProps) {
     return null
   }
 
+  const heroImageUrl = getImageUrl(featuredPost.image)
+
   return (
     <section className="bg-[#1e293b] text-white py-16 relative overflow-hidden">
       
@@ -37,29 +40,22 @@ export function HeroSection({ posts }: HeroSectionProps) {
         <div className="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
           <Link href={`/post/${featuredPost.slug}`} className="block group">
             <div
-              className={`${getCategoryColor(featuredPost.category)} rounded-2xl p-12 shadow-xl hover:shadow-2xl transition-all duration-300 aspect-video flex flex-col justify-center group-hover:scale-[1.02] relative overflow-hidden`}
+              className="rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 aspect-video flex flex-col justify-center group-hover:scale-[1.02] relative overflow-hidden bg-gray-900"
             >
               <div
-                className="absolute inset-0 opacity-70 mix-blend-overlay"
+                className="absolute inset-0"
                 style={{
-                  backgroundImage:
-                    "url(https://soon.udaxgui.com/posts/images/light.avif)",
+                  backgroundImage: `url(${heroImageUrl})`,
                   backgroundSize: "cover",
-                  backgroundPosition: "left bottom",
+                  backgroundPosition: "center",
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-bl from-white/30 via-transparent to-black/20" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative z-10">
-                <div className="text-sm font-medium mb-4 uppercase tracking-wide opacity-90 drop-shadow-sm">
-                  {featuredPost.category}
-                </div>
-                <h1 className="text-3xl md:text-4xl font-bold text-balance drop-shadow-md">{featuredPost.title}</h1>
-              </div>
             </div>
           </Link>
 
           <div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-6 text-white">{featuredPost.title}</h1>
             <p className="text-gray-300 leading-relaxed mb-6 text-lg">{truncateExcerpt(featuredPost.excerpt, 20)}</p>
             <div className="flex items-center gap-4 text-sm">
               <span className="text-gray-400">{featuredPost.date}</span>

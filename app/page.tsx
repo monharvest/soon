@@ -13,6 +13,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {heroImageUrl && <link rel="preload" as="image" href={heroImageUrl} fetchPriority="high" />}
       <Header />
       <main className="flex-1">
         <ContentSection posts={posts} />
