@@ -34,7 +34,7 @@ export function HeroSection({ posts }: HeroSectionProps) {
   const heroImageUrl = getImageUrl(featuredPost.image);
 
   return (
-    <section className="bg-[#1e293b] text-white py-16 relative overflow-hidden">
+    <section data-hero className="bg-[#1e293b] text-white py-16 relative overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
           <Link href={`/post/${featuredPost.slug}`} className="block group">

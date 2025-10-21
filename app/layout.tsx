@@ -36,6 +36,13 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Minimal critical CSS: render hero area before full CSS loads to improve LCP */}
+        <style dangerouslySetInnerHTML={{__html: `
+          [data-hero] { min-height: 360px; display: block; }
+          [data-hero] .container { padding-left: 16px; padding-right: 16px; }
+          [data-hero] .rounded-2xl { border-radius: 16px; }
+          [data-hero] .aspect-video { aspect-ratio: 16/9; }
+        `}} />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         {/* Wrap ThemeProvider with Suspense boundary */}
