@@ -1,3 +1,6 @@
+import fs from "fs"
+import path from "path"
+
 const ACCOUNT_ID = "01644e982bf4fd61e45c31c2dc1a2a57"
 const NAMESPACE_ID = "221b29add0c440658fdbab5c5665340c"
 
@@ -16,14 +19,64 @@ export interface Post {
   createdAt: string
 }
 
+// In-process cache to avoid reading fallback file repeatedly during build.
+let _cachedPosts: Post[] | null = null
+let _fallbackLogged = false
+
 export async function getAllPosts(): Promise<Post[]> {
   const apiToken = process.env.CLOUDFLARE_API_TOKEN
 
+  // Return cached if we've already loaded posts (from KV or local fallback)
+  if (_cachedPosts) return _cachedPosts
+
+  // If the Cloudflare API token is not available during a build (e.g. Pages
+  // builds that don't have the secret set), attempt a local fallback to
+  // `data/posts.json`. This lets static exports succeed without requiring
+  // secrets in the build environment.
   if (!apiToken || apiToken === "YOUR_CLOUDFLARE_API_TOKEN_HERE") {
-    console.warn(
-      "[v0] CLOUDFLARE_API_TOKEN not available during build. Returning empty posts array. " +
-        "Posts will be fetched at runtime when the token is available.",
-    )
+    if (!_fallbackLogged) {
+      console.warn(
+        "[v0] CLOUDFLARE_API_TOKEN not available during build. Attempting local fallback: data/posts.json",
+      )
+    }
+
+    try {
+      const fallbackPath = path.resolve(process.cwd(), "data/posts.json")
+      if (fs.existsSync(fallbackPath)) {
+        const raw = fs.readFileSync(fallbackPath, "utf-8")
+        const localPosts = JSON.parse(raw) as Array<any>
+        const mapped = localPosts.map((p, i) => ({
+          id: p.id || `local-${i}`,
+          title: p.title || p.slug || "",
+          excerpt: p.excerpt || "",
+          category: p.category || "",
+          date: p.date || new Date().toISOString(),
+          image: p.image || "",
+          slug: p.slug || "",
+          metaDescription: p.metaDescription || "",
+          content: p.content || "",
+          published: typeof p.published === "boolean" ? p.published : true,
+          featured: typeof p.featured === "boolean" ? p.featured : false,
+          createdAt: p.createdAt || new Date().toISOString(),
+        })) as Post[]
+
+        _cachedPosts = mapped
+        _fallbackLogged = true
+        console.warn("[v0] Using local posts.json fallback for getAllPosts()")
+        return mapped
+      }
+    } catch (err) {
+      if (!_fallbackLogged) console.warn("[v0] Failed to read local posts.json fallback in getAllPosts():", err)
+    }
+
+    if (!_fallbackLogged) {
+      console.warn(
+        "[v0] No local fallback found. Returning empty posts array. Posts will be fetched at runtime when the token is available.",
+      )
+      _fallbackLogged = true
+    }
+
+    _cachedPosts = []
     return []
   }
 
@@ -44,8 +97,8 @@ export async function getAllPosts(): Promise<Post[]> {
       throw new Error(`Failed to fetch keys: ${keysResponse.statusText}`)
     }
 
-    const keysData = await keysResponse.json()
-    const allKeys = keysData.result || []
+  const keysData: any = await keysResponse.json()
+  const allKeys = keysData?.result || []
 
     const postKeys = allKeys.filter((key: { name: string }) => key.name.startsWith("post:"))
 
@@ -54,7 +107,7 @@ export async function getAllPosts(): Promise<Post[]> {
       postKeys.map((k: any) => k.name),
     )
 
-    const postPromises = postKeys.map(async (key: { name: string }) => {
+  const postPromises = postKeys.map(async (key: { name: string }) => {
       try {
         const encodedKey = encodeURIComponent(key.name)
         const valueResponse = await fetch(
@@ -80,10 +133,11 @@ export async function getAllPosts(): Promise<Post[]> {
       }
     })
 
-    const posts = await Promise.all(postPromises)
+  const posts = await Promise.all(postPromises)
 
-    const validPosts = posts.filter((post): post is Post => post !== null)
+    const validPosts = (posts.filter((post: any) => post !== null) as Post[])
 
+    _cachedPosts = validPosts
     console.log("[v0] Successfully fetched", validPosts.length, "posts")
 
     return validPosts
